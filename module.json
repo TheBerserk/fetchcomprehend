@@ -1,0 +1,18 @@
+{
+  "name": "fetchcomprehend",
+  "title": "FetchComprehend",
+  "description": "Reindirizza le chiamate DeepL al proxy locale per bypassare CORS",
+  "version": "1.0.0",
+  "author": "ChatGPT",
+  "minimumCoreVersion": "10",
+  "scripts": ["scripts/fetch-override.js"],
+  "esmodules": [],
+  "styles": [],
+  "url": "",
+  "manifest": "https://raw.githubusercontent.com/tuonome/fetchcomprehend/main/module.json",
+  "download": "https://github.com/tuonome/fetchcomprehend/archive/refs/heads/main.zip",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  }
+}
