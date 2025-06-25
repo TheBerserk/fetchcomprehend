@@ -1,49 +1,33 @@
-console.log("[FetchComprehend] Inizializzo override fetch");
+// fetch-override.js
 
-// Override fetch per eventuali moduli che usano DeepL via fetch
+import axios from 'axios';
+
+// Salva la fetch originale
 const originalFetch = window.fetch;
-window.fetch = async function(resource, config = {}) {
-  if (typeof resource === "string" && resource.includes("deepl.com/v2/translate")) {
-    console.log("[FetchComprehend] Redirect fetch DeepL a proxy locale");
 
+// Sovrascrivi fetch solo per richieste POST a DeepL (o url specifici)
+window.fetch = async function(resource, options) {
+  // Controlla se la chiamata è al DeepL API (modifica qui se serve)
+  if (typeof resource === 'string' && resource.includes('https://api.deepl.com/v2/translate') && options?.method === 'POST') {
     try {
-      const body = config.body;
-      let params = new URLSearchParams(body);
+      // I dati da inviare (supponendo che siano in formato x-www-form-urlencoded)
+      // Se usi JSON, adattalo di conseguenza
+      const params = new URLSearchParams(options.body);
 
-      const proxyUrl = "http://localhost:3010/deepl";
-      return originalFetch(proxyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.fromEntries(params.entries()))
+      // Chiamata al proxy locale, convertendo params in oggetto
+      const response = await axios.post('http://127.0.0.1:3010/deepl', Object.fromEntries(params.entries()));
+
+      return new Response(JSON.stringify(response.data), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
       });
-    } catch (err) {
-      console.error("[FetchComprehend] Errore parsing body:", err);
+
+    } catch (error) {
+      console.error('Errore fetch proxy DeepL:', error);
+      return Promise.reject(error);
     }
   }
 
-  return originalFetch(resource, config);
+  // Per tutte le altre chiamate, usa fetch originale
+  return originalFetch.apply(this, arguments);
 };
-
-// Intercetta quando axios viene assegnato su window
-Object.defineProperty(window, "axios", {
-  configurable: true,
-  enumerable: true,
-  set(value) {
-    console.log("[FetchComprehend] axios assegnato, preparo override");
-    if (value && typeof value.post === "function") {
-      const originalPost = value.post;
-      value.post = function(url, data, config) {
-        if (url.includes("deepl.com/v2/translate")) {
-          console.log("[FetchComprehend] Intercetto axios -> proxy");
-          return originalPost.call(this, "http://localhost:3010/deepl", data, config);
-        }
-        return originalPost.call(this, url, data, config);
-      };
-      console.log("[FetchComprehend] Override axios.post attivato dinamicamente");
-    }
-    this._axios = value;
-  },
-  get() {
-    return this._axios;
-  }
-});
