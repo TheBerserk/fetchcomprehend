@@ -1,38 +1,29 @@
-// fetch-override.js
-
-(() => {
+(function () {
   const originalFetch = window.fetch;
 
-  window.fetch = async function(resource, options) {
-    if (typeof resource === 'string' &&
-        resource.includes('/v2/translate') &&
-        options?.method === 'POST') {
-      try {
-        // Converti la body urlencoded in oggetto JSON
-        const params = new URLSearchParams(options.body);
-        const jsonBody = Object.fromEntries(params.entries());
+  window.fetch = async function (input, init = {}) {
+    const url = typeof input === 'string' ? input : input.url;
 
-        // Invia la richiesta POST al proxy con JSON
-        const response = await originalFetch("http://127.0.0.1:3010/deepl", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(jsonBody)
-        });
+    if (url.includes("deepl.com")) {
+      console.log("✅ [fetch-override] Intercettata richiesta DeepL:", url);
 
-        const data = await response.json();
-
-        // Ricrea la Response compatibile con fetch
-        return new Response(JSON.stringify(data), {
-          status: response.status,
-          headers: { "Content-Type": "application/json" }
-        });
-      } catch (error) {
-        console.error("Errore fetch proxy DeepL:", error);
-        return Promise.reject(error);
+      const params = new URLSearchParams(new URL(url).search);
+      const body = {};
+      for (const [key, value] of params.entries()) {
+        body[key] = value;
       }
+
+      return originalFetch("http://127.0.0.1:3010/deepl", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
     }
 
-    // Per tutte le altre chiamate usa fetch originale
-    return originalFetch.apply(this, arguments);
+    return originalFetch(input, init);
   };
+
+  console.log("🟢 [fetch-override] Attivo e in ascolto.");
 })();
