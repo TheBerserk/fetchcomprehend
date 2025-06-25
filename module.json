@@ -1,5 +1,5 @@
 {
-  "id": "fetchcomprehend"
+  "id": "fetchcomprehend",
   "name": "fetchcomprehend",
   "title": "FetchComprehend",
   "description": "Reindirizza le chiamate DeepL al proxy locale per bypassare CORS",
