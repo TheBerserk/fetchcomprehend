@@ -1,6 +1,6 @@
 console.log("[FetchComprehend] Inizializzo override fetch");
 
-// Override di fetch (opzionale, per altri moduli che lo usano)
+// Override fetch (per altri moduli eventualmente)
 const originalFetch = window.fetch;
 window.fetch = async function(resource, config = {}) {
   if (typeof resource === "string" && resource.includes("deepl.com/v2/translate")) {
@@ -24,8 +24,8 @@ window.fetch = async function(resource, config = {}) {
   return originalFetch(resource, config);
 };
 
-// Override di axios.post per Comprehend Languages
-Hooks.once("ready", () => {
+// 🔄 Aspetta che axios sia disponibile, poi fai l'override
+function waitForAxiosAndOverride(retries = 20) {
   if (window.axios && typeof window.axios.post === "function") {
     const originalPost = window.axios.post;
 
@@ -38,7 +38,15 @@ Hooks.once("ready", () => {
     };
 
     console.log("[FetchComprehend] Override axios.post attivato");
+  } else if (retries > 0) {
+    console.log(`[FetchComprehend] axios non ancora pronto, ritento... (${retries})`);
+    setTimeout(() => waitForAxiosAndOverride(retries - 1), 500); // aspetta 500ms
   } else {
-    console.warn("[FetchComprehend] axios non disponibile all'avvio.");
+    console.warn("[FetchComprehend] axios non disponibile dopo diversi tentativi.");
   }
+}
+
+// Inizia a cercare axios quando il gioco è pronto
+Hooks.once("ready", () => {
+  waitForAxiosAndOverride();
 });
